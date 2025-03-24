@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bubble Wrap</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            touch-action: manipulation;
+        }
+
+        body {
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            background-color: #f0f0f0;
+            touch-action: none;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+        }
+
+        .header {
+            position: absolute;
+            top: 10px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-family: Arial, sans-serif;
+            z-index: 10;
+        }
+
+        .status {
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 5px 15px;
+            border-radius: 20px;
+            display: inline-block;
+            font-size: 14px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .bubble-wrapper {
+            width: 100%;
+            max-width: 900px;
+            height: auto;
+            aspect-ratio: 3/2;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid #ccc;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            background-color: #e8f4f8;
+        }
+
+        @media (max-width: 920px) {
+            .bubble-wrapper {
+                width: 95%;
+                max-height: 70vh;
+            }
+        }
+
+        @media (max-height: 700px) {
+            .bubble-wrapper {
+                max-height: 65vh;
+            }
+        }
+
+        .bubble-container {
+            width: 100%;
+            height: 100%;
+            display: grid;
+            padding: 10px;
+            grid-template-columns: repeat(15, 1fr);
+            grid-template-rows: repeat(10, 1fr);
+            gap: 5px;
+            touch-action: none;
+        }
+
+        @media (max-width: 600px) {
+            .bubble-container {
+                gap: 3px;
+                padding: 5px;
+            }
+        }
+
+        .bubble {
+            width: 100%;
+            height: 100%;
+            aspect-ratio: 1/1;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8), rgba(173, 216, 230, 0.5));
+            border-radius: 50%;
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 
+                inset -3px -3px 8px rgba(0, 0, 0, 0.1),
+                inset 3px 3px 8px rgba(255, 255, 255, 0.7),
+                2px 2px 4px rgba(0, 0, 0, 0.1);
+            touch-action: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .bubble::before {
+            content: '';
+            position: absolute;
+            top: 20%;
+            left: 25%;
+            width: 20%;
+            height: 20%;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            z-index: 1;
+        }
+
+        .bubble-hitbox {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .popped {
+            background: radial-gradient(circle at center, rgba(200, 200, 200, 0.3), rgba(180, 180, 180, 0.2));
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+            transform: scale(0.9);
+        }
+
+        .popped::before {
+            display: none;
+        }
+
+        /* Base wrinkle styles for popped bubbles */
+        .popped-variant {
+            position: relative;
+        }
+
+        /* Variant 1: Star burst pattern */
+        .popped-variant-1 {
+            border-radius: 40% 45% 42% 38% / 42% 38% 45% 40%;
+            background: radial-gradient(circle at 30% 30%, rgba(220, 220, 220, 0.4), rgba(180, 180, 180, 0.2));
+            box-shadow: 
+                inset 1px 1px 3px rgba(0, 0, 0, 0.2),
+                inset -1px -1px 3px rgba(0, 0, 0, 0.2);
+        }
+        .popped-variant-1::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: 
+                linear-gradient(45deg, transparent 48%, rgba(0, 0, 0, 0.06) 50%, transparent 52%),
+                linear-gradient(135deg, transparent 48%, rgba(0, 0, 0, 0.06) 50%, transparent 52%),
+                linear-gradient(225deg, transparent 48%, rgba(0, 0, 0, 0.06) 50%, transparent 52%),
+                linear-gradient(315deg, transparent 48%, rgba(0, 0, 0, 0.06) 50%, transparent 52%);
+            border-radius: inherit;
+        }
+
+        /* Variant 2: Crumpled corner */
+        .popped-variant-2 {
+            border-radius: 35% 45% 40% 50% / 50% 35% 45% 40%;
+            background: linear-gradient(135deg, rgba(210, 210, 210, 0.3), rgba(180, 180, 180, 0.2));
+            box-shadow: 
+                inset 2px 2px 4px rgba(0, 0, 0, 0.15),
+                inset -1px -1px 3px rgba(0, 0, 0, 0.1);
+        }
+        .popped-variant-2::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: 
+                radial-gradient(circle at 70% 30%, transparent 20%, rgba(0, 0, 0, 0.07) 22%, transparent 30%),
+                radial-gradient(circle at 30% 70%, transparent 20%, rgba(0, 0, 0, 0.07) 22%, transparent 30%);
+            border-radius: inherit;
+        }
+
+        /* Variant 3: Folded sides */
+        .popped-variant-3 {
+            border-radius: 30% 60% 40% 50% / 60% 30% 70% 40%;
+            background: linear-gradient(45deg, rgba(200, 200, 200, 0.3), rgba(170, 170, 170, 0.2));
+            box-shadow: 
+                inset 0px 2px 5px rgba(0, 0, 0, 0.1),
+                inset 0px -2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .popped-variant-3::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: 
+                linear-gradient(to right, transparent 40%, rgba(0, 0, 0, 0.05) 50%, transparent 60%),
+                linear-gradient(to bottom, transparent 40%, rgba(0, 0, 0, 0.05) 50%, transparent 60%);
+            border-radius: inherit;
+        }
+
+        /* Variant 4: Diagonal wrinkles */
+        .popped-variant-4 {
+            border-radius: 55% 45% 40% 50% / 40% 50% 55% 45%;
+            background: radial-gradient(circle at 40% 40%, rgba(210, 210, 210, 0.3), rgba(170, 170, 170, 0.2));
+            box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.15);
+        }
+        .popped-variant-4::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: 
+                linear-gradient(45deg, transparent 40%, rgba(0, 0, 0, 0.08) 50%, transparent 60%),
+                linear-gradient(135deg, transparent 40%, rgba(0, 0, 0, 0.08) 50%, transparent 60%);
+            border-radius: inherit;
+        }
+
+        /* Variant 5: Multi-fold pattern */
+        .popped-variant-5 {
+            border-radius: 40% 55% 65% 35% / 50% 45% 40% 60%;
+            background: radial-gradient(circle at 50% 50%, rgba(200, 200, 200, 0.3), rgba(160, 160, 160, 0.2));
+            box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.2);
+        }
+        .popped-variant-5::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: 
+                repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0, 0, 0, 0.03) 10px, rgba(0, 0, 0, 0.03) 20px),
+                repeating-linear-gradient(135deg, transparent, transparent 15px, rgba(0, 0, 0, 0.03) 15px, rgba(0, 0, 0, 0.03) 25px);
+            border-radius: inherit;
+        }
+
+        /* Variant 6: Circular wrinkles */
+        .popped-variant-6 {
+            border-radius: 45% 55% 40% 60% / 55% 45% 60% 40%;
+            background: radial-gradient(circle at 50% 50%, rgba(190, 190, 190, 0.3), rgba(160, 160, 160, 0.2));
+            box-shadow: inset 0 0 7px rgba(0, 0, 0, 0.15);
+        }
+        .popped-variant-6::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: 
+                radial-gradient(circle at 30% 30%, transparent 20%, rgba(0, 0, 0, 0.05) 25%, transparent 30%),
+                radial-gradient(circle at 70% 70%, transparent 20%, rgba(0, 0, 0, 0.05) 25%, transparent 30%),
+                radial-gradient(circle at 70% 30%, transparent 20%, rgba(0, 0, 0, 0.05) 25%, transparent 30%),
+                radial-gradient(circle at 30% 70%, transparent 20%, rgba(0, 0, 0, 0.05) 25%, transparent 30%);
+            border-radius: inherit;
+        }
+
+        /* Variant 7: Asymmetric collapse */
+        .popped-variant-7 {
+            border-radius: 30% 70% 35% 65% / 65% 30% 70% 35%;
+            background: linear-gradient(120deg, rgba(200, 200, 200, 0.3), rgba(170, 170, 170, 0.2));
+            box-shadow: 
+                inset 3px 1px 4px rgba(0, 0, 0, 0.1),
+                inset -1px -3px 4px rgba(0, 0, 0, 0.1);
+        }
+        .popped-variant-7::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: 
+                linear-gradient(30deg, transparent 40%, rgba(0, 0, 0, 0.06) 50%, transparent 60%),
+                linear-gradient(210deg, transparent 40%, rgba(0, 0, 0, 0.06) 50%, transparent 60%);
+            border-radius: inherit;
+        }
+
+        /* Variant 8: Pressed flat */
+        .popped-variant-8 {
+            border-radius: 48% 52% 49% 51% / 51% 49% 52% 48%;
+            background: radial-gradient(ellipse at center, rgba(210, 210, 210, 0.4), rgba(180, 180, 180, 0.2));
+            box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.2);
+            transform: scale(0.85);
+        }
+        .popped-variant-8::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: 
+                radial-gradient(circle at center, transparent 30%, rgba(0, 0, 0, 0.04) 60%, transparent 70%);
+            border-radius: inherit;
+        }
+
+        /* Variant 9: Corner creases */
+        .popped-variant-9 {
+            border-radius: 60% 40% 55% 45% / 40% 60% 45% 55%;
+            background: linear-gradient(210deg, rgba(205, 205, 205, 0.3), rgba(175, 175, 175, 0.2));
+            box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.15);
+        }
+        .popped-variant-9::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: 
+                linear-gradient(45deg, transparent 80%, rgba(0, 0, 0, 0.07) 90%),
+                linear-gradient(135deg, transparent 80%, rgba(0, 0, 0, 0.07) 90%),
+                linear-gradient(225deg, transparent 80%, rgba(0, 0, 0, 0.07) 90%),
+                linear-gradient(315deg, transparent 80%, rgba(0, 0, 0, 0.07) 90%);
+            border-radius: inherit;
+        }
+
+        /* Variant 10: Rippled surface */
+        .popped-variant-10 {
+            border-radius: 45% 55% 50% 50% / 55% 45% 50% 50%;
+            background: radial-gradient(circle at 40% 40%, rgba(200, 200, 200, 0.3), rgba(170, 170, 170, 0.2));
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.15);
+        }
+        .popped-variant-10::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: 
+                repeating-radial-gradient(circle at center, transparent, transparent 5px, rgba(0, 0, 0, 0.02) 5px, rgba(0, 0, 0, 0.02) 10px),
+                repeating-radial-gradient(circle at 30% 30%, transparent, transparent 5px, rgba(0, 0, 0, 0.02) 5px, rgba(0, 0, 0, 0.02) 10px);
+            border-radius: inherit;
+        }
+
+        /* Animation for bubble reset */
+        @keyframes bubble-reset {
+            0% {
+                transform: scale(0.9);
+                opacity: 0.7;
+            }
+            50% {
+                transform: scale(1.05);
+                opacity: 0.9;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .bubble-resetting {
+            animation: bubble-reset 0.5s ease-out;
+        }
+
+        .controls {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        @media (max-width: 500px) {
+            .controls {
+                gap: 10px;
+            }
+            
+            .sound-toggle {
+                font-size: 12px;
+            }
+        }
+
+        .sound-toggle {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .sound-toggle input {
+            cursor: pointer;
+        }
+
+        .connection-status {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+        }
+
+        .connected {
+            background-color: rgba(0, 128, 0, 0.7);
+        }
+
+        .disconnected {
+            background-color: rgba(255, 0, 0, 0.7);
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/msgpack-lite@0.1.26/dist/msgpack.min.js"></script>
+</head>
+<body>
+    <div class="header">
+        <div class="status">
+            <span id="connected-users">0</span> people popping bubbles
+        </div>
+    </div>
+
+    <div class="bubble-wrapper">
+        <div class="bubble-container" id="bubble-container"></div>
+    </div>
+
+    <div class="controls">
+        <label class="sound-toggle">
+            <input type="checkbox" id="sound-toggle" checked>
+            Sound Effects
+        </label>
+    </div>
+    
+    <div class="connection-status disconnected" id="connection-status">Disconnected</div>
+
+    <!-- Audio elements for pop sounds (preloaded) -->
+    <div id="audio-container" style="display: none;">
+        <!-- Audio elements will be dynamically added here -->
+    </div>
+
+    <script>
+        const bubbleContainer = document.getElementById('bubble-container');
+        const connectedUsersElement = document.getElementById('connected-users');
+        const connectionStatusElement = document.getElementById('connection-status');
+        const soundToggle = document.getElementById('sound-toggle');
+        const audioContainer = document.getElementById('audio-container');
+        
+        // WebSocket connection
+        let socket = null;
+        let isConnected = false;
+        
+        // Sound settings
+        let soundEnabled = true;
+        const NUM_SOUND_FILES = 19; // We have pop-00.mp3 through pop-18.mp3
+        const audioElements = [];
+        
+        // Fixed grid configuration
+        const GRID_ROWS = 10;
+        const GRID_COLS = 15;
+        const TOTAL_BUBBLES = GRID_ROWS * GRID_COLS;
+        
+        // Mouse drag tracking
+        let isMouseDown = false;
+        let lastPoppedBubble = null;
+        
+        // Preload all sound effects
+        function preloadSounds() {
+            for (let i = 0; i < NUM_SOUND_FILES; i++) {
+                const soundIndex = i.toString().padStart(2, '0');
+                const audio = new Audio(`sfx/mp3/pop-${soundIndex}.mp3`);
+                audio.preload = 'auto';
+                audioElements.push(audio);
+                audioContainer.appendChild(audio);
+            }
+        }
+        
+        // Play a random pop sound
+        function playPopSound() {
+            if (soundEnabled) {
+                const randomIndex = Math.floor(Math.random() * NUM_SOUND_FILES);
+                // Clone the audio element to allow multiple sounds to play simultaneously
+                const sound = audioElements[randomIndex].cloneNode();
+                sound.volume = 0.7; // Slightly reduce volume
+                sound.play();
+                
+                // Remove the element after it's done playing to clean up memory
+                sound.onended = function() {
+                    sound.remove();
+                };
+            }
+        }
+        
+        // Create the bubble grid
+        function createBubbleGrid() {
+            bubbleContainer.innerHTML = '';
+            
+            for (let i = 0; i < TOTAL_BUBBLES; i++) {
+                const bubbleWrapper = document.createElement('div');
+                bubbleWrapper.className = 'bubble';
+                bubbleWrapper.dataset.id = i;
+                
+                // Create SVG for perfect circular hitbox
+                const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                svg.setAttribute("width", "100%");
+                svg.setAttribute("height", "100%");
+                svg.setAttribute("viewBox", "0 0 100 100");
+                svg.style.position = "absolute";
+                svg.style.top = "0";
+                svg.style.left = "0";
+                svg.style.pointerEvents = "none";
+                
+                // Create circle path
+                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                circle.setAttribute("cx", "50");
+                circle.setAttribute("cy", "50");
+                circle.setAttribute("r", "50");
+                circle.setAttribute("fill", "transparent");
+                circle.style.pointerEvents = "none";
+                
+                svg.appendChild(circle);
+                bubbleWrapper.appendChild(svg);
+                
+                // Add a transparent hitbox circle that exactly matches the visual bubble
+                const hitbox = document.createElement('div');
+                hitbox.className = 'bubble-hitbox';
+                hitbox.style.position = 'absolute';
+                hitbox.style.top = '0';
+                hitbox.style.left = '0';
+                hitbox.style.width = '100%';
+                hitbox.style.height = '100%';
+                hitbox.style.borderRadius = '50%';
+                hitbox.style.cursor = 'pointer';
+                
+                // Make the hitbox the target for events
+                hitbox.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    popBubble(bubbleWrapper);
+                });
+                
+                hitbox.addEventListener('touchstart', function(e) {
+                    e.stopPropagation();
+                    popBubble(bubbleWrapper);
+                }, { passive: false });
+                
+                bubbleWrapper.appendChild(hitbox);
+                bubbleContainer.appendChild(bubbleWrapper);
+            }
+        }
+        
+        // Connect to WebSocket server
+        function connectWebSocket() {
+            const wsUrl = `ws://${window.location.hostname}:8081`;
+            socket = new WebSocket(wsUrl);
+            
+            socket.binaryType = 'arraybuffer';  // Set to receive binary data
+            
+            socket.onopen = function() {
+                console.log('Connected to WebSocket server');
+                isConnected = true;
+                connectionStatusElement.textContent = 'Connected';
+                connectionStatusElement.classList.remove('disconnected');
+                connectionStatusElement.classList.add('connected');
+            };
+            
+            socket.onclose = function() {
+                console.log('Disconnected from WebSocket server');
+                isConnected = false;
+                connectionStatusElement.textContent = 'Disconnected';
+                connectionStatusElement.classList.remove('connected');
+                connectionStatusElement.classList.add('disconnected');
+                
+                // Try to reconnect after a delay
+                setTimeout(connectWebSocket, 3000);
+            };
+            
+            socket.onmessage = function(event) {
+                console.log('Received message type:', typeof event.data);
+                
+                try {
+                    // Handle binary data with MessagePack
+                    if (event.data instanceof ArrayBuffer) {
+                        console.log('Received binary data, length:', event.data.byteLength);
+                        const data = msgpack.decode(new Uint8Array(event.data));
+                        console.log('Decoded data:', data);
+                        handleServerMessage(data);
+                    } else {
+                        // Fallback to JSON for text messages
+                        console.log('Received text data:', event.data.substring(0, 100));
+                        const data = JSON.parse(event.data);
+                        handleServerMessage(data);
+                    }
+                } catch (error) {
+                    console.error('Error processing message:', error);
+                }
+            };
+            
+            socket.onerror = function(error) {
+                console.error('WebSocket error:', error);
+            };
+        }
+        
+        // Handle messages from the server
+        function handleServerMessage(data) {
+            console.log('Handling message type:', data.type);
+            
+            if (data.type === 'state_update') {
+                // Full state update
+                console.log('Applying full state update');
+                updateBubbleState(data.bubble_state);
+                updateConnectedUsers(data.connected_users);
+            } else if (data.type === 'delta_update') {
+                // Delta update - only apply changes
+                console.log('Applying delta update with', Object.keys(data.delta).length, 'changes');
+                applyDeltaUpdate(data.delta);
+                updateConnectedUsers(data.connected_users);
+            }
+        }
+        
+        // Apply delta updates to bubble state
+        function applyDeltaUpdate(delta) {
+            for (const [bubbleId, isPopped] of Object.entries(delta)) {
+                const bubble = document.querySelector(`.bubble[data-id="${bubbleId}"]`);
+                if (bubble) {
+                    if (isPopped) {
+                        if (!bubble.classList.contains('popped')) {
+                            bubble.classList.add('popped');
+                            
+                            // Apply one of 10 random popped variants
+                            const variantNum = Math.floor(Math.random() * 10) + 1;
+                            bubble.classList.add(`popped-variant`);
+                            bubble.classList.add(`popped-variant-${variantNum}`);
+                            
+                            // Play pop sound
+                            playPopSound();
+                        }
+                    } else {
+                        if (bubble.classList.contains('popped')) {
+                            // Add reset animation class
+                            bubble.classList.add('bubble-resetting');
+                            
+                            // Remove popped classes
+                            bubble.classList.remove('popped');
+                            // Remove all popped variant classes
+                            for (let i = 1; i <= 10; i++) {
+                                bubble.classList.remove(`popped-variant-${i}`);
+                            }
+                            bubble.classList.remove('popped-variant');
+                            bubble.style.borderRadius = '50%';
+                            
+                            // Remove animation class after animation completes
+                            setTimeout(() => {
+                                bubble.classList.remove('bubble-resetting');
+                            }, 500);
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Update the state of all bubbles based on server data
+        function updateBubbleState(bubbleState) {
+            for (const [bubbleId, isPopped] of Object.entries(bubbleState)) {
+                const bubble = document.querySelector(`.bubble[data-id="${bubbleId}"]`);
+                if (bubble) {
+                    if (isPopped) {
+                        if (!bubble.classList.contains('popped')) {
+                            bubble.classList.add('popped');
+                            
+                            // Apply one of 10 random popped variants
+                            const variantNum = Math.floor(Math.random() * 10) + 1;
+                            bubble.classList.add(`popped-variant`);
+                            bubble.classList.add(`popped-variant-${variantNum}`);
+                            
+                            // Play pop sound
+                            playPopSound();
+                        }
+                    } else {
+                        if (bubble.classList.contains('popped')) {
+                            // Add reset animation class
+                            bubble.classList.add('bubble-resetting');
+                            
+                            // Remove popped classes
+                            bubble.classList.remove('popped');
+                            // Remove all popped variant classes
+                            for (let i = 1; i <= 10; i++) {
+                                bubble.classList.remove(`popped-variant-${i}`);
+                            }
+                            bubble.classList.remove('popped-variant');
+                            bubble.style.borderRadius = '50%';
+                            
+                            // Remove animation class after animation completes
+                            setTimeout(() => {
+                                bubble.classList.remove('bubble-resetting');
+                            }, 500);
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Update the connected users count
+        function updateConnectedUsers(count) {
+            connectedUsersElement.textContent = count;
+        }
+        
+        // Pop a bubble and send the update to the server
+        function popBubble(bubble) {
+            if (!bubble.classList.contains('popped') && isConnected) {
+                const bubbleId = bubble.dataset.id;
+                console.log('Popping bubble:', bubbleId);
+                
+                try {
+                    // Send pop message to server using MessagePack
+                    const message = {
+                        type: 'pop_bubble',
+                        bubble_id: bubbleId
+                    };
+                    
+                    console.log('Sending message:', message);
+                    
+                    // Use MessagePack for binary encoding
+                    const binaryData = msgpack.encode(message);
+                    socket.send(binaryData);
+                } catch (error) {
+                    console.error('Error sending pop message:', error);
+                    
+                    // Fallback to JSON if MessagePack fails
+                    socket.send(JSON.stringify({
+                        type: 'pop_bubble',
+                        bubble_id: bubbleId
+                    }));
+                }
+            }
+        }
+        
+        // Reset all bubbles
+        function resetAllBubbles() {
+            if (isConnected) {
+                // Send reset request using MessagePack
+                const message = {
+                    type: 'reset_request'
+                };
+                
+                // Use MessagePack for binary encoding
+                const binaryData = msgpack.encode(message);
+                socket.send(binaryData);
+            }
+        }
+        
+        // Handle bubble clicks - using event delegation
+        bubbleContainer.addEventListener('click', function(e) {
+            // Find the closest bubble parent
+            const bubble = e.target.closest('.bubble');
+            if (bubble) {
+                popBubble(bubble);
+            }
+        });
+        
+        // Mouse drag functionality
+        bubbleContainer.addEventListener('mousedown', function(e) {
+            isMouseDown = true;
+            // Prevent default to avoid text selection during drag
+            e.preventDefault();
+            
+            // Pop the bubble under the cursor if it exists
+            const bubble = e.target.closest('.bubble');
+            if (bubble) {
+                popBubble(bubble);
+                lastPoppedBubble = bubble;
+            }
+        });
+        
+        document.addEventListener('mouseup', function() {
+            isMouseDown = false;
+            lastPoppedBubble = null;
+        });
+        
+        bubbleContainer.addEventListener('mousemove', function(e) {
+            if (isMouseDown) {
+                const bubble = e.target.closest('.bubble');
+                // Only pop if it's a bubble and not the last one we popped (to avoid duplicates)
+                if (bubble && bubble !== lastPoppedBubble) {
+                    popBubble(bubble);
+                    lastPoppedBubble = bubble;
+                }
+            }
+        });
+        
+        // Handle sound toggle
+        soundToggle.addEventListener('change', function() {
+            soundEnabled = this.checked;
+        });
+        
+        // Store active touch points
+        const activeTouches = {};
+        
+        // Prevent default touch behaviors
+        document.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+        }, { passive: false });
+        
+        document.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+        }, { passive: false });
+        
+        // Process touch events for bubbles
+        bubbleContainer.addEventListener('touchstart', function(e) {
+            const touches = e.changedTouches;
+            
+            // Process each touch point
+            for (let i = 0; i < touches.length; i++) {
+                const touch = touches[i];
+                
+                // Store this touch
+                activeTouches[touch.identifier] = {
+                    x: touch.clientX,
+                    y: touch.clientY
+                };
+                
+                // Find bubble at this position
+                const element = document.elementFromPoint(touch.clientX, touch.clientY);
+                const bubble = element ? element.closest('.bubble') : null;
+                if (bubble) {
+                    popBubble(bubble);
+                }
+            }
+        }, { passive: false });
+        
+        bubbleContainer.addEventListener('touchmove', function(e) {
+            const touches = e.changedTouches;
+            
+            // Process each touch point
+            for (let i = 0; i < touches.length; i++) {
+                const touch = touches[i];
+                
+                // Find bubble at this position
+                const element = document.elementFromPoint(touch.clientX, touch.clientY);
+                const bubble = element ? element.closest('.bubble') : null;
+                if (bubble) {
+                    popBubble(bubble);
+                }
+                
+                // Update stored position
+                activeTouches[touch.identifier] = {
+                    x: touch.clientX,
+                    y: touch.clientY
+                };
+            }
+        }, { passive: false });
+        
+        // Remove touch when finished
+        document.addEventListener('touchend', function(e) {
+            const touches = e.changedTouches;
+            
+            for (let i = 0; i < touches.length; i++) {
+                delete activeTouches[touches[i].identifier];
+            }
+        });
+        
+        // Prevent zooming on double tap
+        document.addEventListener('dblclick', function(e) {
+            e.preventDefault();
+        });
+        
+        // Initialize the app
+        function init() {
+            createBubbleGrid();
+            preloadSounds();
+            connectWebSocket();
+            
+            // Add window resize handler for responsive layout
+            window.addEventListener('resize', adjustBubbleSize);
+            adjustBubbleSize();
+        }
+        
+        // Adjust bubble size based on window size
+        function adjustBubbleSize() {
+            const wrapper = document.querySelector('.bubble-wrapper');
+            const container = document.querySelector('.bubble-container');
+            
+            // Ensure the wrapper maintains aspect ratio and fits the screen
+            if (window.innerWidth <= 600) {
+                wrapper.style.maxWidth = '95vw';
+            } else {
+                wrapper.style.maxWidth = '900px';
+            }
+            
+            // Adjust gap size based on screen width
+            if (window.innerWidth <= 400) {
+                container.style.gap = '2px';
+                container.style.padding = '3px';
+            } else if (window.innerWidth <= 600) {
+                container.style.gap = '3px';
+                container.style.padding = '5px';
+            } else {
+                container.style.gap = '5px';
+                container.style.padding = '10px';
+            }
+        }
+        
+        // Start the app when the page loads
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
