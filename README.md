@@ -52,6 +52,28 @@ A real-time collaborative bubble wrap popping experience built with WebSockets a
    http://localhost:8080
    ```
 
+### Hosting on Replit
+
+You can easily host this application on Replit:
+
+1. Create a new Repl and import from GitHub:
+   - Go to [Replit](https://replit.com)
+   - Click "Create Repl" → "Import from GitHub"
+   - Paste your repository URL
+   - Choose "Python" as the language
+
+2. The application is already configured for Replit with:
+   - `.replit` file for configuration
+   - `replit.nix` for dependencies
+   - `main.py` as the entry point with Replit-specific adaptations
+
+3. Just click "Run" and Replit will:
+   - Install all dependencies
+   - Start the server
+   - Provide you with a URL to access your application
+
+4. Share the Replit URL with others to pop bubbles together!
+
 ## How It Works
 
 ### Architecture
